@@ -272,6 +272,13 @@ h1 {
     font-size: 0.95em;
 }
 
+.exercise-muscles {
+    color: #667eea;
+    font-size: 0.9em;
+    margin-bottom: 3px;
+    font-weight: 500;
+}
+
 /* ===== Workout Mode ===== */
 .workout-mode {
     display: none;
@@ -305,8 +312,23 @@ h1 {
 }
 
 .current-params {
-    font-size: 1.2em;
+    font-size: 1.1em;
     opacity: 0.9;
+    line-height: 1.6;
+    background: #f8f9ff;
+    color: #1f2937;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 15px 0;
+    border: 1px solid #dbe4ff;
+}
+
+.current-params strong {
+    color: #1f2937;
+}
+
+.current-params small {
+    color: #374151;
 }
 
 /* ===== Set Tracker ===== */
@@ -368,6 +390,8 @@ h1 {
     margin-bottom: 15px;
     font-weight: 600;
     color: #555;
+    text-align: center;
+    line-height: 1.4;
 }
 
 .timer-controls {
