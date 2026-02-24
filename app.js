@@ -262,6 +262,7 @@ const $ = (id) => document.getElementById(id);
 
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', () => {
+    initExercisesDB();
     setupWeekButtons();
     displayTrainings(currentWeek);
     updateProgressStats();
@@ -314,8 +315,8 @@ function updateProgressStats() {
 
     Object.keys(trainingPlan).forEach(week => {
         totalTrainings += trainingPlan[week].trainings.length;
-        trainingPlan[week].trainings.forEach(t => {
-            totalExercises += t.exercises.length;
+        trainingPlan[week].trainings.forEach((t, ti) => {
+            totalExercises += getEffectiveExercises(parseInt(week), ti).length;
         });
     });
 
@@ -346,16 +347,17 @@ function displayTrainings(week) {
 
     let html = '';
     weekData.trainings.forEach((training, index) => {
+        const effectiveExes = getEffectiveExercises(week, index);
         const done = isTrainingCompleted(week, index);
-        const completedExCount = training.exercises.filter((_, ei) => isExerciseCompleted(week, index, ei)).length;
-        const totalExCount = training.exercises.length;
+        const completedExCount = effectiveExes.filter(ex => isExerciseCompletedByKey(week, index, ex._key)).length;
+        const totalExCount = effectiveExes.length;
         const hasProgress = completedExCount > 0;
         const isPartial = hasProgress && !done;
         html += `
             <div class="training-card ${done ? 'completed' : ''}">
                 <div class="training-header">
                     <h3 class="training-title">${training.day}
-                        ${done ? '<span class="training-badge">✓ Выполнено</span>' : 
+                        ${done ? '<span class="training-badge">✓ Выполнено</span>' :
                          (completedExCount > 0 ? `<span class="training-badge">${completedExCount}/${totalExCount}</span>` : '')}
                     </h3>
                     <div class="training-actions">
@@ -367,8 +369,9 @@ function displayTrainings(week) {
                     </div>
                 </div>
                 <ul class="exercise-list">
-                    ${training.exercises.map((ex, ei) => {
-                        const exDone = isExerciseCompleted(week, index, ei);
+                    ${effectiveExes.map((ex) => {
+                        const exDone = isExerciseCompletedByKey(week, index, ex._key);
+                        const imgSrc = week === 1 ? getExerciseImage(ex) : null;
                         return `
                         <li class="exercise-item ${exDone ? 'done' : ''}">
                             <div class="exercise-check">${exDone ? '✓' : ''}</div>
@@ -378,12 +381,19 @@ function displayTrainings(week) {
                                 <div class="exercise-params">
                                     ${ex.sets} подхода × ${ex.reps} | Отдых: ${ex.rest}с | Темп: ${ex.tempo}
                                 </div>
+                                <div class="exercise-item-actions">
+                                    <button class="ex-action-btn add-db-btn" onclick="addExerciseFromTrainingToDB(${week}, ${index}, '${ex._key}')">+ В базу</button>
+                                    <button class="ex-action-btn remove-ex-btn" onclick="removeExerciseFromDay(${week}, ${index}, '${ex._key}')">🗑 Удалить</button>
+                                </div>
                             </div>
-                            ${week === 1 && getExerciseImage(ex) ? `<img class="exercise-thumb" src="${getExerciseImage(ex)}" alt="${ex.name}">` : ''}
+                            ${imgSrc ? `<img class="exercise-thumb" src="${imgSrc}" alt="${ex.name}">` : ''}
                         </li>
                     `;
                     }).join('')}
                 </ul>
+                <div class="day-add-exercise">
+                    <button class="add-exercise-day-btn" onclick="openExercisePicker(${week}, ${index})">+ Добавить упражнение</button>
+                </div>
             </div>
         `;
     });
@@ -398,7 +408,8 @@ function startWorkout(week, trainingIndex) {
     removeCompletedTraining(week, trainingIndex);
     updateProgressStats();
 
-    currentTraining = trainingPlan[week].trainings[trainingIndex];
+    const _effExes = getEffectiveExercises(week, trainingIndex);
+    currentTraining = { ...trainingPlan[week].trainings[trainingIndex], exercises: _effExes };
     currentTrainingWeek = week;
     currentTrainingIndex = trainingIndex;
     currentExerciseIndex = 0;
@@ -414,7 +425,8 @@ function startWorkout(week, trainingIndex) {
 
 // ===== Continue Workout =====
 function continueWorkout(week, trainingIndex) {
-    currentTraining = trainingPlan[week].trainings[trainingIndex];
+    const _effExes2 = getEffectiveExercises(week, trainingIndex);
+    currentTraining = { ...trainingPlan[week].trainings[trainingIndex], exercises: _effExes2 };
     currentTrainingWeek = week;
     currentTrainingIndex = trainingIndex;
     currentSet = 0;
@@ -422,8 +434,8 @@ function continueWorkout(week, trainingIndex) {
 
     // Найти первое невыполненное упражнение
     let resumeIndex = 0;
-    for (let i = 0; i < currentTraining.exercises.length; i++) {
-        if (!isExerciseCompleted(week, trainingIndex, i)) {
+    for (let i = 0; i < _effExes2.length; i++) {
+        if (!isExerciseCompletedByKey(week, trainingIndex, _effExes2[i]._key)) {
             resumeIndex = i;
             break;
         }
@@ -448,8 +460,9 @@ function resetTraining(week, trainingIndex) {
 
 function clearTrainingExercises(week, trainingIndex) {
     const completed = getCompletedExercises();
-    const prefix = `w${week}-t${trainingIndex}-e`;
-    const filtered = completed.filter(key => !key.startsWith(prefix));
+    const prefix1 = `w${week}-t${trainingIndex}-e`;
+    const prefix2 = `w${week}-t${trainingIndex}-ax`;
+    const filtered = completed.filter(key => !key.startsWith(prefix1) && !key.startsWith(prefix2));
     localStorage.setItem('completedExercises', JSON.stringify(filtered));
 }
 
@@ -539,7 +552,7 @@ function completeSet() {
         showRestTimer(exercise.rest, 'set-rest');
     } else {
         // Все подходы выполнены — сохраняем упражнение
-        saveCompletedExercise(currentTrainingWeek, currentTrainingIndex, currentExerciseIndex);
+        markExerciseDone(currentTrainingWeek, currentTrainingIndex, currentTraining.exercises[currentExerciseIndex]);
         updateProgressStats();
         $('completeSetBtn').style.display = 'none';
 
@@ -563,7 +576,7 @@ function afterExerciseSet() {
     if (currentSet < exercise.sets) {
         showRestTimer(exercise.rest, 'set-rest');
     } else {
-        saveCompletedExercise(currentTrainingWeek, currentTrainingIndex, currentExerciseIndex);
+        markExerciseDone(currentTrainingWeek, currentTrainingIndex, currentTraining.exercises[currentExerciseIndex]);
         updateProgressStats();
 
         if (currentExerciseIndex < currentTraining.exercises.length - 1) {
@@ -776,4 +789,261 @@ function exitWorkout() {
     document.querySelector('.set-tracker').style.display = 'flex';
 
     displayTrainings(currentWeek);
+}
+
+// ===== Exercises Database (localStorage) =====
+const EXERCISES_DB_KEY = 'exercisesDB';
+
+async function initExercisesDB() {
+    if (localStorage.getItem(EXERCISES_DB_KEY) !== null) return;
+    // Try to load from JSON file (works when served via HTTP)
+    try {
+        const res = await fetch('exercises_db.json');
+        if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem(EXERCISES_DB_KEY, JSON.stringify(data.exercises || []));
+            return;
+        }
+    } catch (e) { /* fallthrough to built-in seed */ }
+    // Built-in seed (used when opening via file:// in Chrome or if JSON unavailable)
+    const seed = [
+        { id:1, name:"Отжимания от пола", category:"Грудь / Трицепсы", muscles:"Грудь, трицепсы, передние дельты", defaultSets:3, defaultReps:"8-10", defaultRest:90, defaultTempo:"2 сек вниз, 1 вверх", technique:"ИП: упор лёжа, руки шире плеч. Опускаться до касания груди пола." },
+        { id:2, name:"Приседания", category:"Ноги", muscles:"Квадрицепсы, ягодицы, бицепс бедра", defaultSets:3, defaultReps:"10-12", defaultRest:90, defaultTempo:"2 сек вниз, 1 вверх", technique:"Стопы на ширине плеч, носки слегка развёрнуты." },
+        { id:3, name:"Планка", category:"Пресс / Кор", muscles:"Кор, пресс, стабилизаторы позвоночника", defaultSets:3, defaultReps:"20-30 сек", defaultRest:60, defaultTempo:"статика", technique:"Упор на предплечья и носки, тело в прямой линии." },
+        { id:4, name:"Ягодичный мост", category:"Ягодицы", muscles:"Ягодицы, задняя поверхность бедра", defaultSets:3, defaultReps:"10-12", defaultRest:90, defaultTempo:"2 вверх, 1 пауза, 2 вниз", technique:"Лёжа на спине, ноги согнуты, стопы на полу. Поднимать таз, сжимая ягодицы." },
+        { id:5, name:"Обратные отжимания от стула", category:"Трицепсы", muscles:"Трицепсы, задние дельты", defaultSets:3, defaultReps:"8-10", defaultRest:80, defaultTempo:"средний", technique:"Сидя на краю стула, руки на сидении. Опускаться вниз, сгибая руки в локтях." },
+        { id:6, name:"Выпады на месте", category:"Ноги", muscles:"Квадрицепсы, ягодицы, икроножные", defaultSets:3, defaultReps:"10 на ногу", defaultRest:60, defaultTempo:"медленный", technique:"Одна нога впереди. Опускаться, сгибая оба колена до 90°." },
+        { id:7, name:"Боковая планка", category:"Пресс / Кор", muscles:"Косые мышцы пресса, кор", defaultSets:3, defaultReps:"20-30 сек/сторону", defaultRest:60, defaultTempo:"статика", technique:"Лёжа на боку, упор на предплечье. Тело в прямой линии." },
+        { id:8, name:"Супермен", category:"Спина / Ягодицы", muscles:"Мышцы спины, ягодицы", defaultSets:3, defaultReps:"12-15", defaultRest:60, defaultTempo:"средний", technique:"Лёжа на животе, руки вперёд. Поднимать грудь и ноги." },
+        { id:9, name:"Отжимания узким хватом", category:"Трицепсы / Грудь", muscles:"Трицепсы, грудь (внутренняя часть)", defaultSets:3, defaultReps:"10-12", defaultRest:90, defaultTempo:"3 сек вниз, 1 вверх", technique:"Ладони чуть уже плеч, локти ближе к корпусу." },
+        { id:10, name:"Отжимания с широкой постановкой", category:"Грудь", muscles:"Грудь (внешняя часть), передние дельты, трицепсы", defaultSets:4, defaultReps:"12-15", defaultRest:60, defaultTempo:"медленный", technique:"Упор лёжа, руки широко расставлены." },
+        { id:11, name:"Ягодичный мост на одной ноге", category:"Ягодицы", muscles:"Ягодицы, задняя поверхность бедра", defaultSets:3, defaultReps:"8-10 на ногу", defaultRest:90, defaultTempo:"медленный", technique:"Одна стопа на полу, вторая нога на весу." },
+        { id:12, name:"Приседания с паузой", category:"Ноги", muscles:"Квадрицепсы, ягодицы, бицепс бедра", defaultSets:4, defaultReps:"12-15", defaultRest:60, defaultTempo:"с паузой", technique:"Задержаться в нижней точке 3 сек." },
+        { id:13, name:"Скручивания на пресс", category:"Пресс / Кор", muscles:"Прямая мышца живота, пресс", defaultSets:3, defaultReps:"15-20", defaultRest:60, defaultTempo:"средний", technique:"Лёжа на спине, поднимать плечи от пола." },
+        { id:14, name:"Берпи", category:"Кардио / Всё тело", muscles:"Всё тело, сердечно-сосудистая система", defaultSets:3, defaultReps:"10", defaultRest:90, defaultTempo:"быстрый", technique:"Прыжок в упор лёжа, отжимание, прыжок вверх." },
+        { id:15, name:"Подъём ног лёжа", category:"Пресс / Кор", muscles:"Нижний пресс, сгибатели бедра", defaultSets:3, defaultReps:"12-15", defaultRest:60, defaultTempo:"средний", technique:"Поднимать прямые ноги до 90°, медленно опускать." }
+    ];
+    localStorage.setItem(EXERCISES_DB_KEY, JSON.stringify(seed));
+}
+
+function getExercisesDB() {
+    const raw = localStorage.getItem(EXERCISES_DB_KEY);
+    return raw ? JSON.parse(raw) : [];
+}
+
+function saveExercisesDB(db) {
+    localStorage.setItem(EXERCISES_DB_KEY, JSON.stringify(db));
+}
+
+// ===== Per-Day Added Exercises =====
+function getAddedExercisesForDay(week, ti) {
+    const data = JSON.parse(localStorage.getItem('addedExercises') || '{}');
+    return data[`w${week}-t${ti}`] || [];
+}
+
+function saveAddedExercisesForDay(week, ti, arr) {
+    const data = JSON.parse(localStorage.getItem('addedExercises') || '{}');
+    data[`w${week}-t${ti}`] = arr;
+    localStorage.setItem('addedExercises', JSON.stringify(data));
+}
+
+// ===== Per-Day Removed Base Exercises =====
+function getRemovedBaseExercises() {
+    return JSON.parse(localStorage.getItem('removedBaseExercises') || '[]');
+}
+
+function isBaseExerciseRemoved(week, ti, baseIdx) {
+    return getRemovedBaseExercises().includes(`w${week}-t${ti}-b${baseIdx}`);
+}
+
+function removeBaseExercise(week, ti, baseIdx) {
+    const arr = getRemovedBaseExercises();
+    const key = `w${week}-t${ti}-b${baseIdx}`;
+    if (!arr.includes(key)) {
+        arr.push(key);
+        localStorage.setItem('removedBaseExercises', JSON.stringify(arr));
+    }
+}
+
+// ===== Effective Exercise List for a Day =====
+// _key: 'e{baseIdx}' for base exercises (matches old completion format w{w}-t{t}-e{N})
+//       'ax{_id}' for added exercises
+function getEffectiveExercises(week, ti) {
+    const base = trainingPlan[week] ? trainingPlan[week].trainings[ti].exercises : [];
+    const added = getAddedExercisesForDay(week, ti);
+    const result = [];
+
+    base.forEach((ex, idx) => {
+        if (!isBaseExerciseRemoved(week, ti, idx)) {
+            result.push({ ...ex, _key: `e${idx}`, _isBase: true, _baseIdx: idx });
+        }
+    });
+
+    added.forEach(ex => {
+        result.push({ ...ex, _key: `ax${ex._id}`, _isBase: false });
+    });
+
+    return result;
+}
+
+// ===== Key-based completion =====
+function isExerciseCompletedByKey(week, ti, exKey) {
+    const completed = getCompletedExercises();
+    // 'e{N}' keys match the old format 'w{week}-t{ti}-e{N}'
+    return completed.includes(`w${week}-t${ti}-${exKey}`);
+}
+
+function markExerciseDone(week, ti, exercise) {
+    const key = exercise._key || `e${exercise._baseIdx ?? 0}`;
+    const completed = getCompletedExercises();
+    const fullKey = `w${week}-t${ti}-${key}`;
+    if (!completed.includes(fullKey)) {
+        completed.push(fullKey);
+        localStorage.setItem('completedExercises', JSON.stringify(completed));
+    }
+}
+
+// ===== Add Exercise from Training to DB =====
+function addExerciseFromTrainingToDB(week, ti, exKey) {
+    const effExes = getEffectiveExercises(week, ti);
+    const ex = effExes.find(e => e._key === exKey);
+    if (!ex) return;
+
+    const db = getExercisesDB();
+    if (db.find(e => e.name.toLowerCase() === ex.name.toLowerCase())) {
+        showMainToast(`«${ex.name}» уже есть в базе`, true);
+        return;
+    }
+
+    const newId = db.length > 0 ? Math.max(...db.map(e => e.id)) + 1 : 1;
+    db.push({
+        id: newId,
+        name: ex.name,
+        category: '',
+        muscles: ex.muscles || '',
+        defaultSets: ex.sets,
+        defaultReps: ex.reps,
+        defaultRest: ex.rest,
+        defaultTempo: ex.tempo,
+        technique: ex.technique || ''
+    });
+    saveExercisesDB(db);
+    showMainToast(`«${ex.name}» добавлено в базу`);
+}
+
+// ===== Remove Exercise from Day =====
+function removeExerciseFromDay(week, ti, exKey) {
+    if (!confirm('Удалить упражнение из этой тренировки?')) return;
+
+    if (exKey.startsWith('e')) {
+        const baseIdx = parseInt(exKey.slice(1));
+        removeBaseExercise(week, ti, baseIdx);
+    } else if (exKey.startsWith('ax')) {
+        const _id = exKey.slice(2);
+        const added = getAddedExercisesForDay(week, ti);
+        saveAddedExercisesForDay(week, ti, added.filter(e => e._id !== _id));
+    }
+
+    displayTrainings(currentWeek);
+    updateProgressStats();
+}
+
+// ===== Exercise Picker Modal =====
+let pickerTargetWeek = null;
+let pickerTargetTi = null;
+
+function openExercisePicker(week, ti) {
+    pickerTargetWeek = week;
+    pickerTargetTi = ti;
+    const input = document.getElementById('exercisePickerSearch');
+    if (input) input.value = '';
+    renderExercisePicker();
+    document.getElementById('exercisePickerModal').classList.remove('hidden');
+}
+
+function closeExercisePicker() {
+    document.getElementById('exercisePickerModal').classList.add('hidden');
+}
+
+function renderExercisePicker() {
+    const search = (document.getElementById('exercisePickerSearch')?.value || '').toLowerCase();
+    const db = getExercisesDB();
+    const filtered = db.filter(e =>
+        e.name.toLowerCase().includes(search) ||
+        (e.muscles || '').toLowerCase().includes(search) ||
+        (e.category || '').toLowerCase().includes(search)
+    );
+
+    const list = document.getElementById('exercisePickerList');
+    if (!list) return;
+
+    if (db.length === 0) {
+        list.innerHTML = `<div class="picker-empty">
+            База упражнений пуста.<br>
+            <a href="exercises_db.html">Перейдите в базу упражнений</a> и добавьте упражнения.
+        </div>`;
+        return;
+    }
+
+    if (filtered.length === 0) {
+        list.innerHTML = '<div class="picker-empty">Ничего не найдено. Попробуйте другой запрос.</div>';
+        return;
+    }
+
+    list.innerHTML = filtered.map(ex => `
+        <div class="picker-exercise-item">
+            <div class="picker-exercise-info">
+                <div class="picker-ex-name">${ex.name}</div>
+                <div class="picker-ex-meta">🎯 ${ex.muscles || ''}</div>
+                <div class="picker-ex-params">${ex.defaultSets} × ${ex.defaultReps} | Отдых: ${ex.defaultRest}с</div>
+            </div>
+            <button class="picker-add-btn" onclick="addPickedExercise(${ex.id})">+ Добавить</button>
+        </div>
+    `).join('');
+}
+
+function addPickedExercise(exerciseId) {
+    const db = getExercisesDB();
+    const ex = db.find(e => e.id === exerciseId);
+    if (!ex) return;
+
+    const newExercise = {
+        name: ex.name,
+        muscles: ex.muscles || '',
+        technique: ex.technique || '',
+        sets: ex.defaultSets,
+        reps: ex.defaultReps,
+        rest: ex.defaultRest,
+        tempo: ex.defaultTempo || 'средний',
+        _id: Date.now().toString(36) + Math.random().toString(36).slice(2)
+    };
+
+    const added = getAddedExercisesForDay(pickerTargetWeek, pickerTargetTi);
+    added.push(newExercise);
+    saveAddedExercisesForDay(pickerTargetWeek, pickerTargetTi, added);
+
+    closeExercisePicker();
+    displayTrainings(currentWeek);
+    updateProgressStats();
+    showMainToast(`«${ex.name}» добавлено в тренировку`);
+}
+
+// Close picker on overlay click
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('exercisePickerModal');
+    if (modal) {
+        modal.addEventListener('click', e => { if (e.target === modal) closeExercisePicker(); });
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeExercisePicker(); });
+});
+
+// ===== Toast =====
+function showMainToast(msg, isError = false) {
+    const t = document.getElementById('mainToast');
+    if (!t) return;
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' toast-error' : '');
+    void t.offsetWidth;
+    t.classList.add('toast-show');
+    setTimeout(() => t.classList.remove('toast-show'), 3000);
 }

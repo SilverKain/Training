@@ -745,3 +745,273 @@ h1 {
         font-size: 1.1em;
     }
 }
+
+/* ===== Header Top Row ===== */
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 0;
+}
+
+.db-link-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.95em;
+    font-weight: bold;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+    flex-shrink: 0;
+}
+.db-link-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 18px rgba(102,126,234,0.45);
+}
+
+/* ===== Exercise Item Action Buttons ===== */
+.exercise-item-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 7px;
+    flex-wrap: wrap;
+}
+
+.ex-action-btn {
+    border: none;
+    padding: 4px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.8em;
+    font-weight: 600;
+    transition: transform 0.15s, opacity 0.15s;
+}
+.ex-action-btn:hover { transform: scale(1.05); }
+.ex-action-btn:active { transform: scale(0.97); }
+
+.add-db-btn {
+    background: linear-gradient(135deg, #4caf50, #43a047);
+    color: white;
+}
+
+.remove-ex-btn {
+    background: linear-gradient(135deg, #ef5350, #e53935);
+    color: white;
+}
+
+/* ===== Add Exercise to Day Button ===== */
+.day-add-exercise {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 2px dashed #dbe4ff;
+    text-align: center;
+}
+
+.add-exercise-day-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 28px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.95em;
+    font-weight: bold;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 3px 10px rgba(102,126,234,0.25);
+}
+.add-exercise-day-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+}
+
+/* ===== Modal Overlay ===== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(3px);
+}
+.modal-overlay.hidden { display: none !important; }
+
+.modal-content {
+    background: white;
+    border-radius: 18px;
+    padding: 28px 30px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.modal-header h3 {
+    font-size: 1.3em;
+    color: #667eea;
+}
+
+.modal-close {
+    background: #ef5350;
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+.modal-close:hover { background: #c62828; }
+
+/* ===== Exercise Picker ===== */
+.picker-search {
+    width: 100%;
+    padding: 10px 16px;
+    border: 2px solid #dbe4ff;
+    border-radius: 25px;
+    font-size: 1em;
+    font-family: inherit;
+    outline: none;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+}
+.picker-search:focus { border-color: #667eea; }
+
+.picker-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.picker-exercise-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: #f8f9ff;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border-left: 3px solid #667eea;
+    transition: background 0.2s;
+}
+.picker-exercise-item:hover { background: #eef1ff; }
+
+.picker-exercise-info { flex: 1; min-width: 0; }
+
+.picker-ex-name {
+    font-weight: bold;
+    font-size: 1em;
+    color: #1a1a2e;
+    margin-bottom: 2px;
+}
+
+.picker-ex-meta {
+    color: #667eea;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.picker-ex-params {
+    color: #777;
+    font-size: 0.82em;
+    margin-top: 2px;
+}
+
+.picker-add-btn {
+    background: linear-gradient(135deg, #4caf50 0%, #43a047 100%);
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.88em;
+    font-weight: bold;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+}
+.picker-add-btn:hover { transform: scale(1.05); }
+
+.picker-empty {
+    text-align: center;
+    color: #888;
+    padding: 30px 20px;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+.picker-empty a { color: #667eea; font-weight: bold; }
+
+.picker-footer {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+    text-align: right;
+}
+.picker-manage-link {
+    color: #667eea;
+    font-size: 0.88em;
+    font-weight: 600;
+    text-decoration: none;
+}
+.picker-manage-link:hover { text-decoration: underline; }
+
+/* ===== Toast ===== */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #4caf50;
+    color: white;
+    padding: 13px 22px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 0.95em;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.35s ease;
+    z-index: 9999;
+    pointer-events: none;
+}
+.toast.toast-show { transform: translateY(0); opacity: 1; }
+.toast.toast-error { background: #f44336; }
+
+/* ===== Responsive updates for new elements ===== */
+@media (max-width: 768px) {
+    .header-top { flex-direction: row; align-items: center; }
+    .db-link-btn { font-size: 0.85em; padding: 8px 14px; }
+    .modal-content { padding: 18px; border-radius: 14px; }
+    .picker-add-btn { padding: 7px 14px; }
+    .day-add-exercise { margin-top: 10px; padding-top: 10px; }
+    .add-exercise-day-btn { font-size: 0.9em; padding: 9px 22px; }
+    .toast { bottom: 16px; right: 16px; left: 16px; text-align: center; }
+}
+

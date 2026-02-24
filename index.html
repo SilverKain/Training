@@ -9,8 +9,13 @@
 <body>
     <div class="container">
         <header>
-            <h1>💪 Трекер Тренировок</h1>
-            <p class="subtitle">Месячный курс с собственным весом</p>
+            <div class="header-top">
+                <div>
+                    <h1>💪 Трекер Тренировок</h1>
+                    <p class="subtitle">Месячный курс с собственным весом</p>
+                </div>
+                <a href="exercises_db.html" class="db-link-btn">🏋️ База упражнений</a>
+            </div>
             <div class="progress-stats" id="progressStats">
                 <div class="stat-item">
                     <span class="stat-number" id="completedCount">0</span>
@@ -90,6 +95,24 @@
             <div id="completionMessage" class="hidden"></div>
         </div>
     </div>
+
+    <!-- Exercise Picker Modal -->
+    <div class="modal-overlay hidden" id="exercisePickerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить упражнение в тренировку</h3>
+                <button class="modal-close" onclick="closeExercisePicker()">✕</button>
+            </div>
+            <input type="text" class="picker-search" id="exercisePickerSearch" placeholder="🔍 Поиск упражнений..." oninput="renderExercisePicker()">
+            <div id="exercisePickerList" class="picker-list"></div>
+            <div class="picker-footer">
+                <a href="exercises_db.html" class="picker-manage-link">Управление базой упражнений →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="mainToast"></div>
 
     <script src="app.js"></script>
 </body>
