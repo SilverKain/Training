@@ -214,7 +214,39 @@ h1 {
     list-style: none;
 }
 
-/* Exercise items with completion state */
+.exercise-thumb {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #dbe4ff;
+    background: #f0f0f0;
+}
+
+.exercise-workout-img {
+    display: block;
+    max-width: 220px;
+    max-height: 160px;
+    width: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+    margin: 8px auto 14px;
+    background: rgba(255,255,255,0.15);
+}
+
+@media (max-width: 768px) {
+    .exercise-thumb {
+        width: 58px;
+        height: 58px;
+    }
+    .exercise-workout-img {
+        max-width: 160px;
+        max-height: 120px;
+    }
+}
+
+/* ===== Exercise items with completion state ===== */
 .exercise-item {
     background: #f8f9ff;
     padding: 15px;
@@ -473,6 +505,20 @@ h1 {
 
 .timer.resting .timer-label {
     color: white;
+}
+
+/* Timer exercising state */
+.timer.exercising {
+    background: linear-gradient(135deg, #4caf50 0%, #1b5e20 100%);
+    color: white;
+}
+
+.timer.exercising .timer-display {
+    color: white;
+}
+
+.timer.exercising .timer-label {
+    color: rgba(255,255,255,0.95);
 }
 
 /* ===== Completion ===== */
