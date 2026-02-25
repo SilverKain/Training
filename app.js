@@ -368,29 +368,36 @@ function displayTrainings(week) {
                         ${hasProgress ? `<button class="start-btn reset-btn" onclick="resetTraining(${week}, ${index})">Сбросить</button>` : ''}
                     </div>
                 </div>
-                <ul class="exercise-list">
-                    ${effectiveExes.map((ex) => {
+                <div class="exercise-grid">
+                    ${effectiveExes.map((ex, exIdx) => {
                         const exDone = isExerciseCompletedByKey(week, index, ex._key);
-                        const imgSrc = week === 1 ? getExerciseImage(ex) : null;
+                        const imgSrc = getExerciseImage(ex);
                         return `
-                        <li class="exercise-item ${exDone ? 'done' : ''}">
-                            <div class="exercise-check">${exDone ? '✓' : ''}</div>
-                            <div class="exercise-info">
-                                <div class="exercise-name">${ex.name}</div>
-                                <div class="exercise-muscles">🎯 ${ex.muscles}</div>
-                                <div class="exercise-params">
-                                    ${ex.sets} подхода × ${ex.reps} | Отдых: ${ex.rest}с | Темп: ${ex.tempo}
+                        <div class="exercise-card ${exDone ? 'done' : ''}"
+                             data-key="${ex._key}" data-week="${week}" data-ti="${index}"
+                             onclick="startWorkoutFromExercise(${week}, ${index}, ${exIdx})">
+                            ${exDone ? '<div class="exercise-card-done-badge">✓ Выполнено</div>' : ''}
+                            ${imgSrc
+                                ? `<img class="exercise-card-img" src="${imgSrc}" alt="${ex.name}">`
+                                : `<div class="exercise-card-img-placeholder">💪</div>`}
+                            <div class="exercise-card-body">
+                                <div class="exercise-card-name">${ex.name.replace(/^Суперсет:\s*/i, '')}</div>
+                                <div class="exercise-card-sets">
+                                    <span class="exercise-card-sets-num">${ex.sets}</span>
+                                    <span class="exercise-card-sets-label">подх.</span>
+                                    <span class="exercise-card-sets-x">×</span>
+                                    <span class="exercise-card-reps">${ex.reps}</span>
                                 </div>
-                                <div class="exercise-item-actions">
-                                    <button class="ex-action-btn add-db-btn" onclick="addExerciseFromTrainingToDB(${week}, ${index}, '${ex._key}')">+ В базу</button>
-                                    <button class="ex-action-btn remove-ex-btn" onclick="removeExerciseFromDay(${week}, ${index}, '${ex._key}')">🗑 Удалить</button>
-                                </div>
+                                <div class="exercise-card-start-hint">▶ Нажми, чтобы начать</div>
                             </div>
-                            ${imgSrc ? `<img class="exercise-thumb" src="${imgSrc}" alt="${ex.name}">` : ''}
-                        </li>
+                            <div class="exercise-card-actions" onclick="event.stopPropagation()">
+                                <button class="ex-action-btn add-db-btn" onclick="addExerciseFromTrainingToDB(${week}, ${index}, '${ex._key}')">+ В базу</button>
+                                <button class="ex-action-btn remove-ex-btn" onclick="removeExerciseFromDay(${week}, ${index}, '${ex._key}')">🗑</button>
+                            </div>
+                        </div>
                     `;
                     }).join('')}
-                </ul>
+                </div>
                 <div class="day-add-exercise">
                     <button class="add-exercise-day-btn" onclick="openExercisePicker(${week}, ${index})">+ Добавить упражнение</button>
                 </div>
@@ -441,6 +448,23 @@ function continueWorkout(week, trainingIndex) {
         }
     }
     currentExerciseIndex = resumeIndex;
+
+    $('planView').style.display = 'none';
+    $('workoutMode').classList.add('active');
+    $('workoutTitle').textContent = currentTraining.day;
+
+    showExerciseUI();
+}
+
+// ===== Start Workout From Specific Exercise =====
+function startWorkoutFromExercise(week, trainingIndex, exerciseArrayIndex) {
+    const _effExes = getEffectiveExercises(week, trainingIndex);
+    currentTraining = { ...trainingPlan[week].trainings[trainingIndex], exercises: _effExes };
+    currentTrainingWeek = week;
+    currentTrainingIndex = trainingIndex;
+    currentExerciseIndex = exerciseArrayIndex;
+    currentSet = 0;
+    timerType = null;
 
     $('planView').style.display = 'none';
     $('workoutMode').classList.add('active');
@@ -795,7 +819,11 @@ function exitWorkout() {
 const EXERCISES_DB_KEY = 'exercisesDB';
 
 async function initExercisesDB() {
-    if (localStorage.getItem(EXERCISES_DB_KEY) !== null) return;
+    if (localStorage.getItem(EXERCISES_DB_KEY) !== null) {
+        // Migrate: add warm-up exercises if missing (ids 16–22)
+        upgradeExercisesDB();
+        return;
+    }
     // Try to load from JSON file (works when served via HTTP)
     try {
         const res = await fetch('exercises_db.json');
@@ -821,7 +849,14 @@ async function initExercisesDB() {
         { id:12, name:"Приседания с паузой", category:"Ноги", muscles:"Квадрицепсы, ягодицы, бицепс бедра", defaultSets:4, defaultReps:"12-15", defaultRest:60, defaultTempo:"с паузой", technique:"Задержаться в нижней точке 3 сек." },
         { id:13, name:"Скручивания на пресс", category:"Пресс / Кор", muscles:"Прямая мышца живота, пресс", defaultSets:3, defaultReps:"15-20", defaultRest:60, defaultTempo:"средний", technique:"Лёжа на спине, поднимать плечи от пола." },
         { id:14, name:"Берпи", category:"Кардио / Всё тело", muscles:"Всё тело, сердечно-сосудистая система", defaultSets:3, defaultReps:"10", defaultRest:90, defaultTempo:"быстрый", technique:"Прыжок в упор лёжа, отжимание, прыжок вверх." },
-        { id:15, name:"Подъём ног лёжа", category:"Пресс / Кор", muscles:"Нижний пресс, сгибатели бедра", defaultSets:3, defaultReps:"12-15", defaultRest:60, defaultTempo:"средний", technique:"Поднимать прямые ноги до 90°, медленно опускать." }
+        { id:15, name:"Подъём ног лёжа", category:"Пресс / Кор", muscles:"Нижний пресс, сгибатели бедра", defaultSets:3, defaultReps:"12-15", defaultRest:60, defaultTempo:"средний", technique:"Поднимать прямые ноги до 90°, медленно опускать." },
+        { id:16, name:"Вращение плечами", category:"Разминка", muscles:"Плечевой пояс, трапеции", defaultSets:2, defaultReps:"10 вперёд + 10 назад", defaultRest:30, defaultTempo:"медленный", technique:"Стоя прямо, поднимать оба плеча вверх, отводить назад и опускать по кругу. 10 раз вперёд, 10 раз назад." },
+        { id:17, name:"Круговые движения шеей", category:"Разминка", muscles:"Мышцы шеи, трапеции", defaultSets:2, defaultReps:"5 в каждую сторону", defaultRest:30, defaultTempo:"очень медленный", technique:"Медленно наклонять голову вправо — к груди — влево — назад. Движение плавное, без рывков." },
+        { id:18, name:"Наклоны корпуса в стороны", category:"Разминка", muscles:"Косые мышцы пресса, широчайшие, бока", defaultSets:2, defaultReps:"10 в каждую сторону", defaultRest:30, defaultTempo:"медленный", technique:"Стоя, ноги на ширине плеч. Наклоняться в сторону, тянясь рукой вниз по бедру. Удержать 1–2 сек, вернуться." },
+        { id:19, name:"Круговые движения тазом", category:"Разминка", muscles:"Тазобедренный сустав, поясница", defaultSets:2, defaultReps:"10 в каждую сторону", defaultRest:30, defaultTempo:"медленный", technique:"Стоя, руки на бёдрах. Вращательные движения тазом по большому кругу. 10 раз по часовой, 10 раз против." },
+        { id:20, name:"Ходьба с подъёмом колен", category:"Разминка", muscles:"Сгибатели бедра, икроножные, пресс", defaultSets:2, defaultReps:"20 шагов", defaultRest:30, defaultTempo:"средний", technique:"Ходить на месте, высоко поднимая колени до уровня пояса. Руки двигаются в такт. Спина прямая." },
+        { id:21, name:"Прыжки «Звезда»", category:"Разминка", muscles:"Всё тело, сердечно-сосудистая система", defaultSets:2, defaultReps:"20", defaultRest:30, defaultTempo:"средний", technique:"Из ИП прыгнуть, разводя ноги шире плеч и поднимая руки над головой. Приземлиться мягко. Вернуться прыжком." },
+        { id:22, name:"Динамические выпады", category:"Разминка", muscles:"Квадрицепсы, ягодицы, сгибатели бедра", defaultSets:2, defaultReps:"8 на каждую ногу", defaultRest:30, defaultTempo:"медленный", technique:"Шагнуть вперёд, опустить заднее колено. Удержать 1–2 сек, подняться. Чередовать ноги." }
     ];
     localStorage.setItem(EXERCISES_DB_KEY, JSON.stringify(seed));
 }
@@ -833,6 +868,29 @@ function getExercisesDB() {
 
 function saveExercisesDB(db) {
     localStorage.setItem(EXERCISES_DB_KEY, JSON.stringify(db));
+}
+
+// Migrate: silently add missing warm-up exercises (ids 16–22)
+function upgradeExercisesDB() {
+    const warmup = [
+        { id:16, name:"Вращение плечами", category:"Разминка", muscles:"Плечевой пояс, трапеции", defaultSets:2, defaultReps:"10 вперёд + 10 назад", defaultRest:30, defaultTempo:"медленный", technique:"Стоя прямо, поднимать оба плеча вверх, отводить назад и опускать по кругу. 10 раз вперёд, 10 раз назад." },
+        { id:17, name:"Круговые движения шеей", category:"Разминка", muscles:"Мышцы шеи, трапеции", defaultSets:2, defaultReps:"5 в каждую сторону", defaultRest:30, defaultTempo:"очень медленный", technique:"Медленно наклонять голову вправо — к груди — влево — назад. Движение плавное, без рывков." },
+        { id:18, name:"Наклоны корпуса в стороны", category:"Разминка", muscles:"Косые мышцы пресса, широчайшие, бока", defaultSets:2, defaultReps:"10 в каждую сторону", defaultRest:30, defaultTempo:"медленный", technique:"Стоя, ноги на ширине плеч. Наклоняться в сторону, тянясь рукой вниз. Удержать 1–2 сек, вернуться." },
+        { id:19, name:"Круговые движения тазом", category:"Разминка", muscles:"Тазобедренный сустав, поясница", defaultSets:2, defaultReps:"10 в каждую сторону", defaultRest:30, defaultTempo:"медленный", technique:"Стоя, руки на бёдрах. Вращательные движения тазом по кругу. 10 раз по часовой, 10 раз против." },
+        { id:20, name:"Ходьба с подъёмом колен", category:"Разминка", muscles:"Сгибатели бедра, икроножные, пресс", defaultSets:2, defaultReps:"20 шагов", defaultRest:30, defaultTempo:"средний", technique:"Ходить на месте, высоко поднимая колени до уровня пояса. Руки двигаются в такт. Спина прямая." },
+        { id:21, name:"Прыжки «Звезда»", category:"Разминка", muscles:"Всё тело, сердечно-сосудистая система", defaultSets:2, defaultReps:"20", defaultRest:30, defaultTempo:"средний", technique:"Из ИП прыгнуть, разводя ноги и поднимая руки над головой. Приземлиться мягко. Вернуться прыжком." },
+        { id:22, name:"Динамические выпады", category:"Разминка", muscles:"Квадрицепсы, ягодицы, сгибатели бедра", defaultSets:2, defaultReps:"8 на каждую ногу", defaultRest:30, defaultTempo:"медленный", technique:"Шагнуть вперёд, опустить заднее колено. Удержать 1–2 сек, подняться. Чередовать ноги." }
+    ];
+    const db = getExercisesDB();
+    const existingIds = new Set(db.map(e => e.id));
+    let added = false;
+    warmup.forEach(ex => {
+        if (!existingIds.has(ex.id) && !db.find(e => e.name === ex.name)) {
+            db.push(ex);
+            added = true;
+        }
+    });
+    if (added) saveExercisesDB(db);
 }
 
 // ===== Per-Day Added Exercises =====
@@ -883,7 +941,34 @@ function getEffectiveExercises(week, ti) {
         result.push({ ...ex, _key: `ax${ex._id}`, _isBase: false });
     });
 
+    // Apply stored drag-and-drop order
+    const order = getExerciseOrder(week, ti);
+    if (order && order.length > 0) {
+        const ordered = [];
+        order.forEach(key => {
+            const found = result.find(e => e._key === key);
+            if (found) ordered.push(found);
+        });
+        // Append any exercises not yet in the order (newly added)
+        result.forEach(e => {
+            if (!ordered.find(o => o._key === e._key)) ordered.push(e);
+        });
+        return ordered;
+    }
+
     return result;
+}
+
+// ===== Exercise Order Storage =====
+function getExerciseOrder(week, ti) {
+    const data = JSON.parse(localStorage.getItem('exerciseOrder') || '{}');
+    return data[`w${week}-t${ti}`] || null;
+}
+
+function saveExerciseOrder(week, ti, order) {
+    const data = JSON.parse(localStorage.getItem('exerciseOrder') || '{}');
+    data[`w${week}-t${ti}`] = order;
+    localStorage.setItem('exerciseOrder', JSON.stringify(data));
 }
 
 // ===== Key-based completion =====
@@ -942,6 +1027,12 @@ function removeExerciseFromDay(week, ti, exKey) {
         const _id = exKey.slice(2);
         const added = getAddedExercisesForDay(week, ti);
         saveAddedExercisesForDay(week, ti, added.filter(e => e._id !== _id));
+    }
+
+    // Remove this key from stored order (cleanup)
+    const order = getExerciseOrder(week, ti);
+    if (order) {
+        saveExerciseOrder(week, ti, order.filter(k => k !== exKey));
     }
 
     displayTrainings(currentWeek);
@@ -1035,7 +1126,147 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.addEventListener('click', e => { if (e.target === modal) closeExercisePicker(); });
     }
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeExercisePicker(); });
+    initDragAndDrop();
 });
+
+// ===== Drag & Drop Reordering =====
+const dnd = { srcKey: null, srcWeek: null, srcTi: null };
+
+function initDragAndDrop() {
+    const list = $('trainingList');
+    if (!list) return;
+
+    // ---- HTML5 Drag (desktop) ----
+    list.addEventListener('dragstart', (e) => {
+        // Only drag when started from the handle
+        if (!e.target.classList.contains('drag-handle')) { e.preventDefault(); return; }
+        const li = e.target.closest('li.exercise-item[data-key]');
+        if (!li) { e.preventDefault(); return; }
+        dnd.srcKey = li.dataset.key;
+        dnd.srcWeek = parseInt(li.dataset.week);
+        dnd.srcTi = parseInt(li.dataset.ti);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', dnd.srcKey);
+        setTimeout(() => li.classList.add('dnd-dragging'), 0);
+    });
+
+    list.addEventListener('dragenter', (e) => {
+        const li = e.target.closest('li.exercise-item[data-key]');
+        if (!li || li.dataset.key === dnd.srcKey) return;
+        document.querySelectorAll('.dnd-over').forEach(el => el.classList.remove('dnd-over'));
+        li.classList.add('dnd-over');
+    });
+
+    list.addEventListener('dragover', (e) => {
+        if (e.target.closest('li.exercise-item[data-key]')) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+    });
+
+    list.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const li = e.target.closest('li.exercise-item[data-key]');
+        if (!li) return;
+        const targetKey = li.dataset.key;
+        const week = parseInt(li.dataset.week);
+        const ti = parseInt(li.dataset.ti);
+        if (!dnd.srcKey || dnd.srcKey === targetKey) return;
+        if (dnd.srcWeek !== week || dnd.srcTi !== ti) return;
+        const rect = li.getBoundingClientRect();
+        const insertAfter = e.clientY > rect.top + rect.height / 2;
+        applyDndReorder(week, ti, dnd.srcKey, targetKey, insertAfter);
+    });
+
+    list.addEventListener('dragend', () => {
+        document.querySelectorAll('.dnd-dragging, .dnd-over').forEach(el => {
+            el.classList.remove('dnd-dragging', 'dnd-over');
+        });
+        dnd.srcKey = null;
+    });
+
+    // ---- Touch drag (mobile) ----
+    let touchSrc = null, touchGhost = null, touchLastOver = null;
+
+    list.addEventListener('touchstart', (e) => {
+        const handle = e.target.closest('.drag-handle');
+        if (!handle) return;
+        const li = handle.closest('li.exercise-item[data-key]');
+        if (!li) return;
+        e.preventDefault();
+        touchSrc = li;
+        const rect = li.getBoundingClientRect();
+        touchGhost = li.cloneNode(true);
+        touchGhost.style.cssText = [
+            `position:fixed`,
+            `left:${rect.left}px`,
+            `top:${rect.top}px`,
+            `width:${rect.width}px`,
+            `opacity:0.85`,
+            `pointer-events:none`,
+            `z-index:9999`,
+            `border-radius:10px`,
+            `box-shadow:0 8px 28px rgba(0,0,0,0.35)`
+        ].join(';');
+        document.body.appendChild(touchGhost);
+        li.classList.add('dnd-dragging');
+    }, { passive: false });
+
+    list.addEventListener('touchmove', (e) => {
+        if (!touchSrc || !touchGhost) return;
+        e.preventDefault();
+        const t = e.touches[0];
+        const rect = touchSrc.closest('ul')?.getBoundingClientRect() || touchSrc.getBoundingClientRect();
+        touchGhost.style.top = (t.clientY - touchSrc.getBoundingClientRect().height / 2) + 'px';
+
+        // Find element under finger
+        touchGhost.style.visibility = 'hidden';
+        const el = document.elementFromPoint(t.clientX, t.clientY);
+        touchGhost.style.visibility = '';
+        const li = el ? el.closest('li.exercise-item[data-key]') : null;
+        if (touchLastOver && touchLastOver !== touchSrc) touchLastOver.classList.remove('dnd-over');
+        if (li && li !== touchSrc) {
+            li.classList.add('dnd-over');
+            touchLastOver = li;
+        } else if (!li) {
+            touchLastOver = null;
+        }
+    }, { passive: false });
+
+    list.addEventListener('touchend', () => {
+        if (touchGhost) { touchGhost.remove(); touchGhost = null; }
+        if (touchSrc) {
+            touchSrc.classList.remove('dnd-dragging');
+            if (touchLastOver) {
+                touchLastOver.classList.remove('dnd-over');
+                const week = parseInt(touchSrc.dataset.week);
+                const ti = parseInt(touchSrc.dataset.ti);
+                applyDndReorder(week, ti, touchSrc.dataset.key, touchLastOver.dataset.key, false);
+            }
+        }
+        touchSrc = null;
+        touchLastOver = null;
+    });
+}
+
+function applyDndReorder(week, ti, srcKey, tgtKey, insertAfter) {
+    if (!srcKey || !tgtKey || srcKey === tgtKey) return;
+    const exercises = getEffectiveExercises(week, ti);
+    const keys = exercises.map(ex => ex._key);
+    const srcIdx = keys.indexOf(srcKey);
+    const tgtIdx = keys.indexOf(tgtKey);
+    if (srcIdx === -1 || tgtIdx === -1) return;
+
+    keys.splice(srcIdx, 1);
+    // Recalculate tgtIdx after removal
+    const newTgtIdx = keys.indexOf(tgtKey);
+    const insertIdx = insertAfter ? newTgtIdx + 1 : newTgtIdx;
+    keys.splice(insertIdx, 0, srcKey);
+
+    saveExerciseOrder(week, ti, keys);
+    displayTrainings(currentWeek);
+    showMainToast('Порядок упражнений обновлён');
+}
 
 // ===== Toast =====
 function showMainToast(msg, isError = false) {

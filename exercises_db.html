@@ -62,6 +62,19 @@
         }
         .add-btn:hover { transform: scale(1.05); }
 
+        .reset-btn {
+            background: transparent;
+            color: #aaa;
+            border: 1.5px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .reset-btn:hover { background: #fff0f0; color: #e53935; border-color: #e53935; }
+
         /* Search & Filter */
         .controls {
             background: white;
@@ -109,85 +122,170 @@
             white-space: nowrap;
         }
 
-        /* Exercise Cards */
-        .exercise-cards { display: flex; flex-direction: column; gap: 12px; }
+        /* Exercise Cards Grid */
+        .exercise-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
 
         .exercise-card {
             background: white;
-            border-radius: 12px;
-            padding: 18px 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border-left: 4px solid #667eea;
-            transition: transform 0.2s, box-shadow 0.2s;
+            border-radius: 14px;
+            box-shadow: 0 4px 14px rgba(102,126,234,0.12);
+            border: 2px solid #dbe4ff;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
         }
         .exercise-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 28px rgba(102,126,234,0.22);
+            border-color: #667eea;
         }
 
-        .card-top {
+        .card-img {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            display: block;
+            background: #f0f0f0;
+        }
+        .card-img-placeholder {
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: linear-gradient(135deg, #e8ecff 0%, #d0d8ff 100%);
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 12px;
-            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
         }
 
-        .card-info { flex: 1; min-width: 0; }
+        .card-body {
+            padding: 12px 14px 8px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
 
         .card-name {
-            font-size: 1.15em;
-            font-weight: bold;
+            font-size: 1em;
+            font-weight: 800;
             color: #1a1a2e;
-            margin-bottom: 4px;
+            cursor: pointer;
+            line-height: 1.3;
+            transition: color 0.2s;
         }
+        .card-name:hover { color: #667eea; }
 
         .card-category {
             display: inline-block;
             background: #eef1ff;
             color: #667eea;
-            font-size: 0.8em;
-            padding: 2px 10px;
+            font-size: 0.75em;
+            padding: 2px 9px;
             border-radius: 12px;
-            margin-bottom: 6px;
-            font-weight: 500;
+            font-weight: 600;
+            width: fit-content;
         }
+        .card-category[data-cat="Разминка"] { background: #fff3e0; color: #e65100; }
 
         .card-muscles {
             color: #667eea;
-            font-size: 0.9em;
-            font-weight: 500;
+            font-size: 0.82em;
+            font-weight: 600;
         }
 
-        .card-params {
-            color: #555;
-            font-size: 0.88em;
-            margin-top: 4px;
+        .card-sets-row {
+            display: flex;
+            align-items: baseline;
+            gap: 3px;
+            flex-wrap: wrap;
+        }
+        .card-sets-num {
+            font-size: 1.6em;
+            font-weight: 900;
+            color: #667eea;
+            line-height: 1;
+        }
+        .card-sets-label {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #667eea;
+        }
+        .card-sets-x {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: #9ca3af;
+            margin: 0 2px;
+        }
+        .card-reps {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: #374151;
         }
 
         .card-technique {
-            color: #666;
-            font-size: 0.88em;
-            margin-top: 6px;
+            color: #555;
+            font-size: 0.83em;
             line-height: 1.5;
-            padding-top: 8px;
-            border-top: 1px solid #f0f0f0;
+            padding: 8px 10px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+            margin-top: 4px;
+            display: none;
         }
+        .card-technique.open { display: block; }
+
+        .card-levels {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            border-top: 1px dashed #c7d0ff;
+            padding-top: 7px;
+        }
+        .card-levels-title {
+            font-size: 0.78em;
+            font-weight: 700;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 2px;
+        }
+        .level-badge {
+            display: flex;
+            gap: 6px;
+            font-size: 0.82em;
+            line-height: 1.4;
+            align-items: flex-start;
+        }
+        .level-icon { flex-shrink: 0; }
+        .level-label { font-weight: 700; margin-right: 3px; }
+        .level-easy .level-label { color: #2e7d32; }
+        .level-medium .level-label { color: #e65100; }
+        .level-hard .level-label { color: #c62828; }
+        .level-text { color: #444; }
 
         .card-actions {
             display: flex;
-            gap: 8px;
-            flex-shrink: 0;
+            gap: 6px;
+            padding: 6px 14px 10px;
+            border-top: 1px solid #f0f0f0;
+            justify-content: flex-end;
         }
 
         .edit-btn {
             background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 7px 14px;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 0.85em;
+            font-size: 0.82em;
             font-weight: bold;
             transition: transform 0.2s;
         }
@@ -197,10 +295,10 @@
             background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 7px 14px;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 0.85em;
+            font-size: 0.82em;
             font-weight: bold;
             transition: transform 0.2s;
         }
@@ -358,11 +456,17 @@
         .toast.show { transform: translateY(0); opacity: 1; }
         .toast.error { background: #f44336; }
 
-        @media (max-width: 600px) {
+        @media (max-width: 700px) {
             header { padding: 15px; }
             h1 { font-size: 1.3em; }
             .form-row { grid-template-columns: 1fr; }
             .modal-content { padding: 20px; }
+            .exercise-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .card-sets-num { font-size: 1.3em; }
+        }
+
+        @media (max-width: 420px) {
+            .exercise-cards { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -373,7 +477,10 @@
             <a href="index.html" class="back-btn">← Назад</a>
             <h1>🏋️ База упражнений</h1>
         </div>
-        <button class="add-btn" onclick="openAddModal()">+ Добавить упражнение</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="reset-btn" onclick="resetDB()" title="Сбросить кэш и загрузить актуальную базу">🔄 Обновить базу</button>
+            <button class="add-btn" onclick="openAddModal()">+ Добавить упражнение</button>
+        </div>
     </header>
 
     <div class="controls">
@@ -449,6 +556,8 @@
 
 <script>
 const DB_KEY = 'exercisesDB';
+const DB_VER_KEY = 'exercisesDB_ver';
+const DB_VER = 2;          // увеличить при изменении структуры данных
 const SEED_URL = 'exercises_db.json';
 let editingId = null;
 
@@ -460,25 +569,67 @@ function getDB() {
 
 function saveDB(db) {
     localStorage.setItem(DB_KEY, JSON.stringify(db));
+    localStorage.setItem(DB_VER_KEY, String(DB_VER));
+}
+
+function getSavedVer() {
+    return parseInt(localStorage.getItem(DB_VER_KEY) || '0');
+}
+
+function upgradeDB() {
+    const warmup = [
+        { id:16, name:"Вращение плечами", category:"Разминка", muscles:"Плечевой пояс, трапеции", defaultSets:2, defaultReps:"10 вперёд + 10 назад", defaultRest:30, defaultTempo:"медленный", technique:"Стоя прямо, поднимать оба плеча вверх, отводить назад и опускать по кругу. 10 раз вперёд, 10 раз назад." },
+        { id:17, name:"Круговые движения шеей", category:"Разминка", muscles:"Мышцы шеи, трапеции", defaultSets:2, defaultReps:"5 в каждую сторону", defaultRest:30, defaultTempo:"очень медленный", technique:"Медленно наклонять голову вправо — к груди — влево — назад. Движение плавное, без рывков." },
+        { id:18, name:"Наклоны корпуса в стороны", category:"Разминка", muscles:"Косые мышцы пресса, широчайшие, бока", defaultSets:2, defaultReps:"10 в каждую сторону", defaultRest:30, defaultTempo:"медленный", technique:"Стоя, ноги на ширине плеч. Наклоняться в сторону, тянясь рукой вниз. Удержать 1–2 сек, вернуться." },
+        { id:19, name:"Круговые движения тазом", category:"Разминка", muscles:"Тазобедренный сустав, поясница", defaultSets:2, defaultReps:"10 в каждую сторону", defaultRest:30, defaultTempo:"медленный", technique:"Стоя, руки на бёдрах. Вращательные движения тазом по кругу. 10 раз по часовой, 10 раз против." },
+        { id:20, name:"Ходьба с подъёмом колен", category:"Разминка", muscles:"Сгибатели бедра, икроножные, пресс", defaultSets:2, defaultReps:"20 шагов", defaultRest:30, defaultTempo:"средний", technique:"Ходить на месте, высоко поднимая колени до уровня пояса. Руки двигаются в такт. Спина прямая." },
+        { id:21, name:"Прыжки «Звезда»", category:"Разминка", muscles:"Всё тело, сердечно-сосудистая система", defaultSets:2, defaultReps:"20", defaultRest:30, defaultTempo:"средний", technique:"Из ИП прыгнуть, разводя ноги и поднимая руки над головой. Приземлиться мягко. Вернуться прыжком." },
+        { id:22, name:"Динамические выпады", category:"Разминка", muscles:"Квадрицепсы, ягодицы, сгибатели бедра", defaultSets:2, defaultReps:"8 на каждую ногу", defaultRest:30, defaultTempo:"медленный", technique:"Шагнуть вперёд, опустить заднее колено. Удержать 1–2 сек, подняться. Чередовать ноги." }
+    ];
+    const db = getDB() || [];
+    const existingIds = new Set(db.map(e => e.id));
+    let added = false;
+    warmup.forEach(ex => {
+        if (!existingIds.has(ex.id) && !db.find(e => e.name === ex.name)) {
+            db.push(ex);
+            added = true;
+        }
+    });
+    if (added) saveDB(db);
+}
+
+async function resetDB() {
+    localStorage.removeItem(DB_KEY);
+    localStorage.removeItem(DB_VER_KEY);
+    showToast('Загрузка актуальной базы...');
+    await initDB();
+    showToast('База обновлена: ' + (getDB() || []).length + ' упражнений ✓');
 }
 
 async function initDB() {
     const existing = getDB();
+    const savedVer = getSavedVer();
+
+    // Всегда пытаемся подтянуть актуальные данные из JSON
+    // (пропускаем только если версия актуальна И данные уже полные)
+    const isUpToDate = savedVer >= DB_VER && existing !== null && existing.length >= 53;
+    if (!isUpToDate) {
+        try {
+            const res = await fetch(SEED_URL + '?v=' + DB_VER);
+            if (res.ok) {
+                const data = await res.json();
+                saveDB(data.exercises || []);
+                renderExercises();
+                return;
+            }
+        } catch (e) { /* fallthrough */ }
+    }
+    // localStorage актуален — используем как есть
     if (existing !== null && existing.length > 0) {
         renderExercises();
         return;
     }
-    // Try loading from JSON file (works over HTTP)
-    try {
-        const res = await fetch(SEED_URL);
-        if (res.ok) {
-            const data = await res.json();
-            saveDB(data.exercises || []);
-            renderExercises();
-            return;
-        }
-    } catch (e) { /* fallthrough to built-in seed */ }
-    // Built-in seed for file:// access
+    // Аварийный фолбэк для file:// — встроенные данные (первые 22 без levels)
     const seed = [
         { id:1, name:"Отжимания от пола", category:"Грудь / Трицепсы", muscles:"Грудь, трицепсы, передние дельты", defaultSets:3, defaultReps:"8-10", defaultRest:90, defaultTempo:"2 сек вниз, 1 вверх", technique:"ИП: упор лёжа, руки шире плеч. Опускаться до касания груди пола." },
         { id:2, name:"Приседания", category:"Ноги", muscles:"Квадрицепсы, ягодицы, бицепс бедра", defaultSets:3, defaultReps:"10-12", defaultRest:90, defaultTempo:"2 сек вниз, 1 вверх", technique:"Стопы на ширине плеч, носки слегка развёрнуты." },
@@ -494,7 +645,14 @@ async function initDB() {
         { id:12, name:"Приседания с паузой", category:"Ноги", muscles:"Квадрицепсы, ягодицы, бицепс бедра", defaultSets:4, defaultReps:"12-15", defaultRest:60, defaultTempo:"с паузой", technique:"Задержаться в нижней точке 3 сек." },
         { id:13, name:"Скручивания на пресс", category:"Пресс / Кор", muscles:"Прямая мышца живота, пресс", defaultSets:3, defaultReps:"15-20", defaultRest:60, defaultTempo:"средний", technique:"Лёжа на спине, поднимать плечи от пола." },
         { id:14, name:"Берпи", category:"Кардио / Всё тело", muscles:"Всё тело, сердечно-сосудистая система", defaultSets:3, defaultReps:"10", defaultRest:90, defaultTempo:"быстрый", technique:"Прыжок в упор лёжа, отжимание, прыжок вверх." },
-        { id:15, name:"Подъём ног лёжа", category:"Пресс / Кор", muscles:"Нижний пресс, сгибатели бедра", defaultSets:3, defaultReps:"12-15", defaultRest:60, defaultTempo:"средний", technique:"Поднимать прямые ноги до 90°, медленно опускать." }
+        { id:15, name:"Подъём ног лёжа", category:"Пресс / Кор", muscles:"Нижний пресс, сгибатели бедра", defaultSets:3, defaultReps:"12-15", defaultRest:60, defaultTempo:"средний", technique:"Поднимать прямые ноги до 90°, медленно опускать." },
+        { id:16, name:"Вращение плечами", category:"Разминка", muscles:"Плечевой пояс, трапеции", defaultSets:2, defaultReps:"10 вперёд + 10 назад", defaultRest:30, defaultTempo:"медленный", technique:"Стоя прямо, поднимать оба плеча вверх, отводить назад и опускать по кругу. 10 раз вперёд, 10 раз назад." },
+        { id:17, name:"Круговые движения шеей", category:"Разминка", muscles:"Мышцы шеи, трапеции", defaultSets:2, defaultReps:"5 в каждую сторону", defaultRest:30, defaultTempo:"очень медленный", technique:"Медленно наклонять голову вправо — к груди — влево — назад. Движение плавное, без рывков." },
+        { id:18, name:"Наклоны корпуса в стороны", category:"Разминка", muscles:"Косые мышцы пресса, широчайшие, бока", defaultSets:2, defaultReps:"10 в каждую сторону", defaultRest:30, defaultTempo:"медленный", technique:"Стоя, ноги на ширине плеч. Наклоняться в сторону, тянясь рукой вниз. Удержать 1–2 сек, вернуться." },
+        { id:19, name:"Круговые движения тазом", category:"Разминка", muscles:"Тазобедренный сустав, поясница", defaultSets:2, defaultReps:"10 в каждую сторону", defaultRest:30, defaultTempo:"медленный", technique:"Стоя, руки на бёдрах. Вращательные движения тазом по кругу. 10 раз по часовой, 10 раз против." },
+        { id:20, name:"Ходьба с подъёмом колен", category:"Разминка", muscles:"Сгибатели бедра, икроножные, пресс", defaultSets:2, defaultReps:"20 шагов", defaultRest:30, defaultTempo:"средний", technique:"Ходить на месте, высоко поднимая колени до уровня пояса. Руки двигаются в такт. Спина прямая." },
+        { id:21, name:"Прыжки «Звезда»", category:"Разминка", muscles:"Всё тело, сердечно-сосудистая система", defaultSets:2, defaultReps:"20", defaultRest:30, defaultTempo:"средний", technique:"Из ИП прыгнуть, разводя ноги и поднимая руки над головой. Приземлиться мягко. Вернуться прыжком." },
+        { id:22, name:"Динамические выпады", category:"Разминка", muscles:"Квадрицепсы, ягодицы, сгибатели бедра", defaultSets:2, defaultReps:"8 на каждую ногу", defaultRest:30, defaultTempo:"медленный", technique:"Шагнуть вперёд, опустить заднее колено. Удержать 1–2 сек, подняться. Чередовать ноги." }
     ];
     saveDB(seed);
     renderExercises();
@@ -503,6 +661,45 @@ async function initDB() {
 function getCategories(db) {
     const cats = [...new Set(db.map(e => e.category).filter(Boolean))].sort();
     return cats;
+}
+
+// ===== Image Map =====
+const exerciseImages = {
+    "отжимания от пола": "Pic/Отжимания_1.png",
+    "отжимания": "Pic/Отжимания_1.png",
+    "отжимания узким хватом": "Pic/Отжимания_2.png",
+    "отжимания с широкой постановкой": "Pic/Отжимания_2.png",
+    "отжимания от возвышенности": "Pic/Отжимания_1.png",
+    "приседания": "Pic/Приседания.png",
+    "приседания с паузой": "Pic/Приседания.png",
+    "приседания с паузой (3 сек)": "Pic/Приседания.png",
+    "планка": "Pic/Планка.png",
+    "боковая планка": "Pic/Боковая_планка.png",
+    "ягодичный мост": "Pic/Ягодичный_мост.png",
+    "ягодичный мост на одной ноге": "Pic/Ягодичный_мост.png",
+    "подъёмы таза лёжа (ягодичный мост)": "Pic/Ягодичный_мост.png",
+    "обратные отжимания": "Pic/Обратные_отжимания_от_стула.png",
+    "обратные отжимания от стула": "Pic/Обратные_отжимания_от_стула.png",
+    "выпады": "Pic/Выпады_на_месте.png",
+    "выпады на месте": "Pic/Выпады_на_месте.png",
+    "выпады назад": "Pic/Выпады_на_месте.png",
+    "болгарские выпады": "Pic/Выпады_на_месте.png",
+    "прыжки из выпада": "Pic/Выпады_на_месте.png",
+    "динамические выпады": "Pic/Выпады_на_месте.png",
+    "отжимания от стены": "Pic/Отжимания_1.png",
+    "отжимания с колен": "Pic/Отжимания_1.png",
+    "отжимания с паузой внизу": "Pic/Отжимания_1.png",
+    "плиометрические отжимания": "Pic/Отжимания_1.png",
+    "отжимания домиком": "Pic/Отжимания_2.png",
+    "псевдо-стойка у стены": "Pic/Отжимания_2.png",
+    "отжимания пике": "Pic/Отжимания_2.png",
+    "неполные приседания": "Pic/Приседания.png",
+    "пистолет к стулу": "Pic/Приседания.png",
+    "выпрыгивания из приседа": "Pic/Приседания.png"
+};
+
+function getCardImage(name) {
+    return exerciseImages[(name || '').toLowerCase()] || null;
 }
 
 // ===== Render =====
@@ -542,27 +739,40 @@ function renderExercises() {
         return;
     }
 
-    container.innerHTML = filtered.map(ex => `
+    container.innerHTML = filtered.map(ex => {
+        const imgSrc = getCardImage(ex.name);
+        const imgHtml = imgSrc
+            ? `<img class="card-img" src="${imgSrc}" alt="${escHtml(ex.name)}">`
+            : `<div class="card-img-placeholder">💪</div>`;
+        return `
         <div class="exercise-card">
-            <div class="card-top">
-                <div class="card-info">
-                    <div class="card-name">${escHtml(ex.name)}</div>
-                    ${ex.category ? `<span class="card-category">${escHtml(ex.category)}</span>` : ''}
-                    <div class="card-muscles">🎯 ${escHtml(ex.muscles || '')}</div>
-                    <div class="card-params">
-                        ${ex.defaultSets} подх. × ${escHtml(ex.defaultReps || '')}
-                        | Отдых: ${ex.defaultRest}с
-                        | Темп: ${escHtml(ex.defaultTempo || '')}
-                    </div>
-                    ${ex.technique ? `<div class="card-technique">⚙️ ${escHtml(ex.technique)}</div>` : ''}
+            ${imgHtml}
+            <div class="card-body">
+                <div class="card-name" onclick="toggleTechnique(${ex.id})" title="Нажмите для техники">${escHtml(ex.name)} <span style="font-size:0.75em;color:#aaa;">▾</span></div>
+                ${ex.category ? `<span class="card-category" data-cat="${escHtml(ex.category)}">${escHtml(ex.category)}</span>` : ''}
+                <div class="card-muscles">🎯 ${escHtml(ex.muscles || '')}</div>
+                <div class="card-sets-row">
+                    <span class="card-sets-num">${ex.defaultSets}</span>
+                    <span class="card-sets-label">подх.</span>
+                    <span class="card-sets-x">×</span>
+                    <span class="card-reps">${escHtml(ex.defaultReps || '')}</span>
                 </div>
-                <div class="card-actions">
-                    <button class="edit-btn" onclick="openEditModal(${ex.id})">✏️ Изменить</button>
-                    <button class="delete-btn" onclick="deleteExercise(${ex.id})">🗑 Удалить</button>
-                </div>
+                ${(ex.technique || ex.levels) ? `<div class="card-technique" id="tech-${ex.id}">
+                    ${ex.technique ? `<div>⚙️ ${escHtml(ex.technique)}</div>` : ''}
+                    ${ex.levels ? `<div class="card-levels">
+                        <div class="card-levels-title">📊 Уровни сложности</div>
+                        <div class="level-badge level-easy"><span class="level-icon">🟢</span><span class="level-text"><span class="level-label">Лёгкий:</span>${escHtml(ex.levels.easy || '')}</span></div>
+                        <div class="level-badge level-medium"><span class="level-icon">🟡</span><span class="level-text"><span class="level-label">Средний:</span>${escHtml(ex.levels.medium || '')}</span></div>
+                        <div class="level-badge level-hard"><span class="level-icon">🔴</span><span class="level-text"><span class="level-label">Сложный:</span>${escHtml(ex.levels.hard || '')}</span></div>
+                    </div>` : ''}
+                </div>` : ''}
+            </div>
+            <div class="card-actions">
+                <button class="edit-btn" onclick="openEditModal(${ex.id})">✏️ Изменить</button>
+                <button class="delete-btn" onclick="deleteExercise(${ex.id})">🗑</button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function escHtml(str) {
@@ -571,6 +781,11 @@ function escHtml(str) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+}
+
+function toggleTechnique(id) {
+    const el = document.getElementById('tech-' + id);
+    if (el) el.classList.toggle('open');
 }
 
 // ===== Modal =====
