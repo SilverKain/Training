@@ -240,35 +240,20 @@
         }
         .card-technique.open { display: block; }
 
-        .card-levels {
-            margin-top: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            border-top: 1px dashed #c7d0ff;
-            padding-top: 7px;
-        }
-        .card-levels-title {
-            font-size: 0.78em;
+        .card-level-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75em;
             font-weight: 700;
-            color: #667eea;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-bottom: 2px;
+            padding: 2px 9px;
+            border-radius: 12px;
+            width: fit-content;
+            margin-top: 2px;
         }
-        .level-badge {
-            display: flex;
-            gap: 6px;
-            font-size: 0.82em;
-            line-height: 1.4;
-            align-items: flex-start;
-        }
-        .level-icon { flex-shrink: 0; }
-        .level-label { font-weight: 700; margin-right: 3px; }
-        .level-easy .level-label { color: #2e7d32; }
-        .level-medium .level-label { color: #e65100; }
-        .level-hard .level-label { color: #c62828; }
-        .level-text { color: #444; }
+        .card-level-tag.easy  { background: #e8f5e9; color: #2e7d32; }
+        .card-level-tag.medium { background: #fff8e1; color: #e65100; }
+        .card-level-tag.hard  { background: #ffebee; color: #c62828; }
 
         .card-actions {
             display: flex;
@@ -488,6 +473,12 @@
         <select class="filter-select" id="categoryFilter" onchange="renderExercises()">
             <option value="">Все категории</option>
         </select>
+        <select class="filter-select" id="levelFilter" onchange="renderExercises()">
+            <option value="">Все уровни</option>
+            <option value="easy">🟢 Лёгкий</option>
+            <option value="medium">🟡 Средний</option>
+            <option value="hard">🔴 Сложный</option>
+        </select>
         <span class="count-badge" id="countBadge">0 упражнений</span>
     </div>
 
@@ -545,6 +536,15 @@
             <textarea id="fTechnique" placeholder="Опишите технику..."></textarea>
         </div>
 
+        <div class="form-group">
+            <label>Уровень сложности</label>
+            <select id="fLevel">
+                <option value="easy">🟢 Лёгкий</option>
+                <option value="medium" selected>🟡 Средний</option>
+                <option value="hard">🔴 Сложный</option>
+            </select>
+        </div>
+
         <div class="modal-actions">
             <button class="cancel-btn" onclick="closeModal()">Отмена</button>
             <button class="save-btn" onclick="saveExercise()">💾 Сохранить</button>
@@ -557,7 +557,7 @@
 <script>
 const DB_KEY = 'exercisesDB';
 const DB_VER_KEY = 'exercisesDB_ver';
-const DB_VER = 2;          // увеличить при изменении структуры данных
+const DB_VER = 3;          // увеличить при изменении структуры данных
 const SEED_URL = 'exercises_db.json';
 let editingId = null;
 
@@ -702,11 +702,24 @@ function getCardImage(name) {
     return exerciseImages[(name || '').toLowerCase()] || null;
 }
 
+// ===== Level helpers =====
+const LEVEL_META = {
+    easy:   { icon: '🟢', label: 'Лёгкий' },
+    medium: { icon: '🟡', label: 'Средний' },
+    hard:   { icon: '🔴', label: 'Сложный' }
+};
+function levelTag(level) {
+    const m = LEVEL_META[level];
+    if (!m) return '';
+    return `<span class="card-level-tag ${level}">${m.icon} ${m.label}</span>`;
+}
+
 // ===== Render =====
 function renderExercises() {
     const db = getDB() || [];
     const search = document.getElementById('searchInput').value.toLowerCase();
     const cat = document.getElementById('categoryFilter').value;
+    const lvl = document.getElementById('levelFilter').value;
 
     // Update category filter options
     const catSelect = document.getElementById('categoryFilter');
@@ -725,6 +738,9 @@ function renderExercises() {
     }
     if (cat) {
         filtered = filtered.filter(e => e.category === cat);
+    }
+    if (lvl) {
+        filtered = filtered.filter(e => e.level === lvl);
     }
 
     document.getElementById('countBadge').textContent = `${filtered.length} упражнений`;
@@ -750,6 +766,7 @@ function renderExercises() {
             <div class="card-body">
                 <div class="card-name" onclick="toggleTechnique(${ex.id})" title="Нажмите для техники">${escHtml(ex.name)} <span style="font-size:0.75em;color:#aaa;">▾</span></div>
                 ${ex.category ? `<span class="card-category" data-cat="${escHtml(ex.category)}">${escHtml(ex.category)}</span>` : ''}
+                ${ex.level ? levelTag(ex.level) : ''}
                 <div class="card-muscles">🎯 ${escHtml(ex.muscles || '')}</div>
                 <div class="card-sets-row">
                     <span class="card-sets-num">${ex.defaultSets}</span>
@@ -757,14 +774,8 @@ function renderExercises() {
                     <span class="card-sets-x">×</span>
                     <span class="card-reps">${escHtml(ex.defaultReps || '')}</span>
                 </div>
-                ${(ex.technique || ex.levels) ? `<div class="card-technique" id="tech-${ex.id}">
-                    ${ex.technique ? `<div>⚙️ ${escHtml(ex.technique)}</div>` : ''}
-                    ${ex.levels ? `<div class="card-levels">
-                        <div class="card-levels-title">📊 Уровни сложности</div>
-                        <div class="level-badge level-easy"><span class="level-icon">🟢</span><span class="level-text"><span class="level-label">Лёгкий:</span>${escHtml(ex.levels.easy || '')}</span></div>
-                        <div class="level-badge level-medium"><span class="level-icon">🟡</span><span class="level-text"><span class="level-label">Средний:</span>${escHtml(ex.levels.medium || '')}</span></div>
-                        <div class="level-badge level-hard"><span class="level-icon">🔴</span><span class="level-text"><span class="level-label">Сложный:</span>${escHtml(ex.levels.hard || '')}</span></div>
-                    </div>` : ''}
+                ${ex.technique ? `<div class="card-technique" id="tech-${ex.id}">
+                    <div>⚙️ ${escHtml(ex.technique)}</div>
                 </div>` : ''}
             </div>
             <div class="card-actions">
@@ -800,6 +811,7 @@ function openAddModal() {
     document.getElementById('fRest').value = 60;
     document.getElementById('fTempo').value = '';
     document.getElementById('fTechnique').value = '';
+    document.getElementById('fLevel').value = 'medium';
     document.getElementById('exerciseModal').classList.remove('hidden');
     setTimeout(() => document.getElementById('fName').focus(), 100);
 }
@@ -818,6 +830,7 @@ function openEditModal(id) {
     document.getElementById('fRest').value = ex.defaultRest || 60;
     document.getElementById('fTempo').value = ex.defaultTempo || '';
     document.getElementById('fTechnique').value = ex.technique || '';
+    document.getElementById('fLevel').value = ex.level || 'medium';
     document.getElementById('exerciseModal').classList.remove('hidden');
 }
 
@@ -841,7 +854,8 @@ function saveExercise() {
         defaultReps: document.getElementById('fReps').value.trim() || '10',
         defaultRest: parseInt(document.getElementById('fRest').value) || 60,
         defaultTempo: document.getElementById('fTempo').value.trim() || 'средний',
-        technique: document.getElementById('fTechnique').value.trim()
+        technique: document.getElementById('fTechnique').value.trim(),
+        level: document.getElementById('fLevel').value || 'medium'
     };
 
     if (editingId !== null) {
